@@ -19,14 +19,6 @@
 //
 #include "duktape/duktape.h"
 
-//
-//  Tiny Garbage Collector
-//
-//  A tiny garbage collector based on Cello Garbage Collector.
-//  See: https://github.com/orangeduck/tgc
-//
-#include "tgc/tgc.h"
-
 #include <string.h>
 #include <stdio.h>
 #include <switch.h>
