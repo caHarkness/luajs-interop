@@ -3,7 +3,7 @@
 //
 //  Convenience method to read an entire file into memory.
 //
-char* freadall(char* fname)
+char* reads(char* fname)
 {
     char* buffer = 0;
     long length;
@@ -26,4 +26,26 @@ char* freadall(char* fname)
         return buffer;
 
     return "";
+}
+
+void debugWaitForKey(char* file, int line)
+{
+    #define DEBUGGER
+    #ifdef DEBUGGER
+
+    printf("<< %s, line %d\n", file, line);
+    
+    while (true)
+    {
+        hidScanInput();
+
+        u64 kDown = hidKeysDown(CONTROLLER_P1_AUTO);
+
+        if (kDown != 0)
+            break;
+
+        consoleUpdate(NULL);
+    }
+
+    #endif
 }

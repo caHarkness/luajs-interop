@@ -6,45 +6,88 @@
 lua_State* L;
 duk_context* D;
 
-char* lua_init_fdata;
-char* js_init_fdata;
-char* lua_frame_fdata;
-char* js_frame_fdata;
-
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    consoleInit(NULL);
-    romfsInit();
+    consoleInit(NULL);             debugWaitForKey(__FILE__, __LINE__);
+    romfsInit();                   debugWaitForKey(__FILE__, __LINE__);
 
-    L = luaL_newstate();
-    D = duk_create_heap_default();
+    L = luaL_newstate();           debugWaitForKey(__FILE__, __LINE__);
+    D = duk_create_heap_default(); debugWaitForKey(__FILE__, __LINE__);
 
-    install_luaapi(L);
-    install_jsapi(D);
+    expose_api_lua(L);             debugWaitForKey(__FILE__, __LINE__);
+    expose_api_js(D);              debugWaitForKey(__FILE__, __LINE__);
 
     //
-    //  Exposing anonymous C functions to Duktape on the fly?
-    //  Define print2 as a function that takes one argument.
+    //  When the user calls `jsinterop()` from within JavaScript,
+    //  The anonymous function below executes C code, then
+    //  Sends back a string confirming C code was executed.
     //
-    jsapi_addfunc(D, "print2", 1, ({
-        duk_ret_t __fn__(duk_context* dc)
+    expose_func_js(D, "jsinterop", 1, ({
+        duk_ret_t __fn__(duk_context* D)
         {
-            printf("%s\n", duk_to_string(D, 0));
+            debugWaitForKey(__FILE__, __LINE__);
+
+            //
+            //  Assign param1 to the first argument
+            //  Passed here from JavaScript.
+            //
+            char* param1 = duk_to_string(D, 0);      debugWaitForKey(__FILE__, __LINE__);
+            // char* param2 = duk_to_string(D, 1);   debugWaitForKey(__FILE__, __LINE__);
+            // char* paramN = duk_to_string(D, N-1); debugWaitForKey(__FILE__, __LINE__);
+
+            printf(
+                "The following string came from JavaScript: %s\n",
+                param1); debugWaitForKey(__FILE__, __LINE__);
+
             return 0;
         } __fn__;
     }));
 
-    lua_init_fdata = freadall("romfs:/init.lua");
-    js_init_fdata = freadall("romfs:/init.js");
-    lua_frame_fdata = freadall("romfs:/frame.lua");
-    js_frame_fdata = freadall("romfs:/frame.js");
-
-    luaL_dostring(L, lua_init_fdata);
-    duk_eval_string_noresult(D, js_init_fdata);
+    debugWaitForKey(__FILE__, __LINE__);
 
     //
+    //  When the user calls `luainterop()` from within Lua,
+    //  The anonymous function below executes C code, then
+    //  Sends back a string confirming C code was executed.
     //
-    //
+    expose_func_lua(L, "luainterop", ({
+        int __fn__(lua_State* L)
+        {
+            debugWaitForKey(__FILE__, __LINE__);
+            //
+            //  Assign param1 and param2 to the first
+            //  Two arguments passed here from Lua.
+            //
+            double param1 = lua_tonumber(L, 1); debugWaitForKey(__FILE__, __LINE__);
+            double param2 = lua_tonumber(L, 2); debugWaitForKey(__FILE__, __LINE__);
+
+            printf(
+                "The numbers %f and %f came from Lua.\n",
+                param1,
+                param2); debugWaitForKey(__FILE__, __LINE__);
+
+            //
+            //  Send a string back to Lua
+            //
+            lua_pushstring(L, "This string came from the C Language.\n");
+            debugWaitForKey(__FILE__, __LINE__);
+
+            return 1;
+        } __fn__;
+    }));
+
+                                         debugWaitForKey(__FILE__, __LINE__);
+
+    char* f1 = reads("romfs:/init.lua"); debugWaitForKey(__FILE__, __LINE__);
+    char* f2 = reads("romfs:/init.js");  debugWaitForKey(__FILE__, __LINE__);
+
+    exec_lua(L, f1);                     debugWaitForKey(__FILE__, __LINE__);
+    exec_js(D, f2);                      debugWaitForKey(__FILE__, __LINE__);
+    exec_lua(L, "onInit()");             debugWaitForKey(__FILE__, __LINE__);
+    
+    // Program dies after this line...
+    // For now, don't call onInit()
+    exec_js(D, "onInit();");             debugWaitForKey(__FILE__, __LINE__);
 
     while (appletMainLoop())
     {
@@ -54,14 +97,16 @@ int main(int argc, char **argv)
         u64 kHeld = hidKeysHeld(CONTROLLER_P1_AUTO);
         u64 kUp = hidKeysUp(CONTROLLER_P1_AUTO);
 
+        //
+        //  It's common for Homebrew apps to utilize the plus button
+        //  As a way to quickly terminate the app, so remove it if you
+        //  Feel daring.
+        //
         if (kDown & KEY_PLUS)
             break;
 
-        if (kDown & KEY_DUP)
-            luaL_dostring(L, lua_frame_fdata);
-
-        if (kDown & KEY_DDOWN)
-            duk_eval_string_noresult(D, js_frame_fdata);
+        exec_lua(L, "onUpdate()");
+        exec_js(D, "onUpdate();");
 
         consoleUpdate(NULL);
     }
@@ -70,6 +115,9 @@ int main(int argc, char **argv)
     //
     //
 
+    exec_lua(L, "onEnd()");
+    exec_js(D, "onEnd();");
+    
     lua_close(L);
     duk_destroy_heap(D);
 

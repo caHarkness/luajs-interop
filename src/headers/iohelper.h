@@ -3,6 +3,7 @@
 
 #include <global.h>
 
-char* freadall(char* fname);
+char* reads(char* fname);
+void debugWaitForKey();
 
 #endif

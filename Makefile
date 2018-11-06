@@ -32,16 +32,16 @@ include $(DEVKITPRO)/libnx/switch_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	bin
-SOURCES		:=	src inc/duktape inc/lua inc/tgc 
+SOURCES		:=	src inc/duktape inc/lua
 DATA		:=	data
-INCLUDES	:=	src/headers inc
-#inc/duktape inc/lua inc/tgc
+INCLUDES	:=	src/headers inc inc/lua
 EXEFS_SRC	:=	exefs_src
 ROMFS	    :=	romfs
 
-APP_TITLE := Lua.js
-APP_AUTHOR := caharkness
-APP_VERSION := 0.1 alpha
+APP_TITLE   := Lua.js
+APP_AUTHOR  := caharkness
+APP_VERSION := 0.4 alpha
+ICON		:=  Icon
 
 #---------------------------------------------------------------------------------
 # options for code generation
@@ -159,7 +159,7 @@ $(BUILD):
 #---------------------------------------------------------------------------------
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).pfs0 $(TARGET).nso $(TARGET).nro $(TARGET).nacp $(TARGET).elf
+	@rm -fr $(BUILD) out
 
 
 #---------------------------------------------------------------------------------
