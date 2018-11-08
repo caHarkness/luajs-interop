@@ -41,7 +41,7 @@ ROMFS	    :=	romfs
 APP_TITLE   := Lua.js
 APP_AUTHOR  := caharkness
 APP_VERSION := 0.4 alpha
-ICON		:=  Icon
+ICON		:=  Icon.jpg
 
 #---------------------------------------------------------------------------------
 # options for code generation
